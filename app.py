@@ -22,11 +22,23 @@ def download_adjusted_close_prices(start_date='2024-01-01'):
     tickers = sp500_data['Ticker Symbol'].tolist()
     end_date = datetime.now().strftime('%Y-%m-%d')
     all_data = {}
+    failed_tickers = []
+
     for ticker in tickers:
         print(f"Downloading data for {ticker}...")
-        data = yf.download(ticker, start=start_date, end=end_date, progress = False)
-        if not data.empty:
-            all_data[ticker] = data['Adj Close']
+        try:
+            data = yf.download(ticker, start=start_date, end=end_date, progress=False)
+            if not data.empty:
+                all_data[ticker] = data['Adj Close']
+            else:
+                failed_tickers.append(ticker)
+        except Exception as e:
+            failed_tickers.append(ticker)
+            print(f"Failed to download data for {ticker}: {e}")
+    
+    if failed_tickers:
+        print(f"Failed to download data for the following tickers: {', '.join(failed_tickers)}")
+        
     all_data_df = pd.DataFrame(all_data)
     return all_data_df, sp500_data
 

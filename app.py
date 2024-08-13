@@ -24,7 +24,7 @@ def download_adjusted_close_prices(start_date='2024-01-01'):
     all_data = {}
     for ticker in tickers:
         print(f"Downloading data for {ticker}...")
-        data = yf.download(ticker, start=start_date, end=end_date)
+        data = yf.download(ticker, start=start_date, end=end_date, progress = False)
         if not data.empty:
             all_data[ticker] = data['Adj Close']
     all_data_df = pd.DataFrame(all_data)

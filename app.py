@@ -42,60 +42,78 @@ def download_adjusted_close_prices(start_date='2024-01-01'):
     all_data_df = pd.DataFrame(all_data)
     return all_data_df, sp500_data
 
-# Function to calculate top ten price returns
+# function to calculate top ten price returns
 def top_ten(start_date, end_date):
+
+    # Filter all_data_df for the specified date range
     filtered_data = all_data_df.loc[start_date:end_date]
+
+    # Ensure we have data for the exact start and end dates
     if start_date not in filtered_data.index or end_date not in filtered_data.index:
         raise ValueError("Data for the specified start or end date is not available in the filtered data.")
-    
+
+    # Calculate the percentage price change for each ticker
     start_prices = filtered_data.loc[start_date]
     end_prices = filtered_data.loc[end_date]
-    price_change = round(((end_prices - start_prices) / start_prices) * 100, 2)
-    
+    price_change = round(((end_prices - start_prices) / start_prices) * 100,2)
+
+    # Sort the tickers by price change in descending order
     top_ten_tickers = price_change.sort_values(ascending=False).head(10)
-    
+
+    # Merge the top ten tickers with the sp500_data to get company details
     top_ten_details = pd.merge(
         top_ten_tickers.reset_index(),
         sp500_data,
         left_on='index',
         right_on='Ticker Symbol'
     )
-    
+
+    # Drop the redundant 'Ticker Symbol' column
+    top_ten_details.drop(columns=['Ticker Symbol'], inplace=True)
+    # Rename columns for clarity
     top_ten_details.rename(columns={0: 'Price Return (%)', 'index': 'Ticker Symbol'}, inplace=True)
-    
-    # Assign the calculated price changes to the correct column
-    top_ten_details['Price Return (%)'] = top_ten_details['Price Return (%)'].fillna(price_change)
-    
     top_ten_details = top_ten_details[['Ticker Symbol', 'Company Name', 'Sector', 'Industry', 'Price Return (%)']]
+
+    # Sort the details by price return for clarity
     top_ten_details = top_ten_details.sort_values(by='Price Return (%)', ascending=False)
+    # return top_ten_details
     return top_ten_details
 
-# Function to calculate bottom ten price returns
+# function to calculate bottom ten price returns
 def bottom_ten(start_date, end_date):
+
+    # Filter all_data_df for the specified date range
     filtered_data = all_data_df.loc[start_date:end_date]
+
+    # Ensure we have data for the exact start and end dates
     if start_date not in filtered_data.index or end_date not in filtered_data.index:
         raise ValueError("Data for the specified start or end date is not available in the filtered data.")
-    
+
+    # Calculate the percentage price change for each ticker
     start_prices = filtered_data.loc[start_date]
     end_prices = filtered_data.loc[end_date]
-    price_change = round(((end_prices - start_prices) / start_prices) * 100, 2)
-    
+    price_change = round(((end_prices - start_prices) / start_prices) * 100,2)
+
+    # Sort the tickers by price change in descending order
     bottom_ten_tickers = price_change.sort_values(ascending=True).head(10)
-    
+
+    # Merge the top ten tickers with the sp500_data to get company details
     bottom_ten_details = pd.merge(
         bottom_ten_tickers.reset_index(),
         sp500_data,
         left_on='index',
         right_on='Ticker Symbol'
     )
-    
+
+    # Drop the redundant 'Ticker Symbol' column
+    bottom_ten_details.drop(columns=['Ticker Symbol'], inplace=True)
+    # Rename columns for clarity
     bottom_ten_details.rename(columns={0: 'Price Return (%)', 'index': 'Ticker Symbol'}, inplace=True)
-    
-    # Assign the calculated price changes to the correct column
-    bottom_ten_details['Price Return (%)'] = bottom_ten_details['Price Return (%)'].fillna(price_change)
-    
     bottom_ten_details = bottom_ten_details[['Ticker Symbol', 'Company Name', 'Sector', 'Industry', 'Price Return (%)']]
+
+    # Sort the details by price return for clarity
     bottom_ten_details = bottom_ten_details.sort_values(by='Price Return (%)', ascending=False)
+    # return top_ten_details
     return bottom_ten_details
 
 # Main function to run the Streamlit app

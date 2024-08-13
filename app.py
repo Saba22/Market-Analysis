@@ -47,19 +47,27 @@ def top_ten(start_date, end_date):
     filtered_data = all_data_df.loc[start_date:end_date]
     if start_date not in filtered_data.index or end_date not in filtered_data.index:
         raise ValueError("Data for the specified start or end date is not available in the filtered data.")
+    
     start_prices = filtered_data.loc[start_date]
     end_prices = filtered_data.loc[end_date]
     price_change = round(((end_prices - start_prices) / start_prices) * 100, 2)
+    
     top_ten_tickers = price_change.sort_values(ascending=False).head(10)
+    
     top_ten_details = pd.merge(
         top_ten_tickers.reset_index(),
         sp500_data,
         left_on='index',
         right_on='Ticker Symbol'
     )
-    top_ten_details.drop(columns=['Ticker Symbol'], inplace=True)
+    
     top_ten_details.rename(columns={0: 'Price Return (%)', 'index': 'Ticker Symbol'}, inplace=True)
+    
+    # Assign the calculated price changes to the correct column
+    top_ten_details['Price Return (%)'] = top_ten_details['Price Return (%)'].fillna(price_change)
+    
     top_ten_details = top_ten_details[['Ticker Symbol', 'Company Name', 'Sector', 'Industry', 'Price Return (%)']]
+    top_ten_details = top_ten_details.sort_values(by='Price Return (%)', ascending=False)
     return top_ten_details
 
 # Function to calculate bottom ten price returns
@@ -67,19 +75,27 @@ def bottom_ten(start_date, end_date):
     filtered_data = all_data_df.loc[start_date:end_date]
     if start_date not in filtered_data.index or end_date not in filtered_data.index:
         raise ValueError("Data for the specified start or end date is not available in the filtered data.")
+    
     start_prices = filtered_data.loc[start_date]
     end_prices = filtered_data.loc[end_date]
     price_change = round(((end_prices - start_prices) / start_prices) * 100, 2)
+    
     bottom_ten_tickers = price_change.sort_values(ascending=True).head(10)
+    
     bottom_ten_details = pd.merge(
         bottom_ten_tickers.reset_index(),
         sp500_data,
         left_on='index',
         right_on='Ticker Symbol'
     )
-    bottom_ten_details.drop(columns=['Ticker Symbol'], inplace=True)
+    
     bottom_ten_details.rename(columns={0: 'Price Return (%)', 'index': 'Ticker Symbol'}, inplace=True)
+    
+    # Assign the calculated price changes to the correct column
+    bottom_ten_details['Price Return (%)'] = bottom_ten_details['Price Return (%)'].fillna(price_change)
+    
     bottom_ten_details = bottom_ten_details[['Ticker Symbol', 'Company Name', 'Sector', 'Industry', 'Price Return (%)']]
+    bottom_ten_details = bottom_ten_details.sort_values(by='Price Return (%)', ascending=False)
     return bottom_ten_details
 
 # Main function to run the Streamlit app

@@ -40,7 +40,7 @@ def download_adjusted_close_prices(start_date='2024-01-01'):
         print(f"Failed to download data for the following tickers: {', '.join(failed_tickers)}")
         
     all_data_df = pd.DataFrame(all_data)
-    return all_data_df, sp500_data, failed_tickers             ## 
+    return all_data_df, sp500_data
 
 # function to calculate top ten price returns
 def calculate_price_returns(all_data_df, sp500_data, start_date, end_date):
@@ -97,10 +97,7 @@ def main():
         st.error("Error: End Date must fall after Start Date.")
     else:
         # Download data (consider caching this for performance)
-        all_data_df, sp500_data, failed_tickers = download_adjusted_close_prices(start_date=str(start_date)) ##
-
-        if failed_tickers:                                                                                    ##
-            st.warning(f"Failed to download data for the following tickers: {', '.join(failed_tickers)}")   ##
+        all_data_df, sp500_data= download_adjusted_close_prices(start_date=str(start_date))
 
         # Calculate top ten and bottom ten
         top_ten_tickers, bottom_ten_tickers = calculate_price_returns(all_data_df, sp500_data, str(start_date), str(end_date))

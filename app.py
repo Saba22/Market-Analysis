@@ -23,7 +23,6 @@ def download_adjusted_close_prices(start_date='2024-01-01'):
     end_date = datetime.now().strftime('%Y-%m-%d')
     all_data = {}
     failed_tickers = []
-
     for ticker in tickers:
         print(f"Downloading data for {ticker}...")
         try:
@@ -35,54 +34,52 @@ def download_adjusted_close_prices(start_date='2024-01-01'):
         except Exception as e:
             failed_tickers.append(ticker)
             print(f"Failed to download data for {ticker}: {e}")
-    
+
     if failed_tickers:
         print(f"Failed to download data for the following tickers: {', '.join(failed_tickers)}")
         
     all_data_df = pd.DataFrame(all_data)
     return all_data_df, sp500_data
 
-# function to calculate top ten price returns
-def calculate_price_returns(all_data_df, sp500_data, start_date, end_date):
-
-    # Filter all_data_df for the specified date range
+# Function to calculate top ten price returns
+def top_ten(start_date, end_date):
     filtered_data = all_data_df.loc[start_date:end_date]
-
-    # Ensure we have data for the exact start and end dates
     if start_date not in filtered_data.index or end_date not in filtered_data.index:
         raise ValueError("Data for the specified start or end date is not available in the filtered data.")
-
-    # Calculate the percentage price change for each ticker
     start_prices = filtered_data.loc[start_date]
     end_prices = filtered_data.loc[end_date]
     price_change = round(((end_prices - start_prices) / start_prices) * 100, 2)
-
-    # Return sorted top ten and bottom ten tickers
     top_ten_tickers = price_change.sort_values(ascending=False).head(10)
-    bottom_ten_tickers = price_change.sort_values(ascending=True).head(10)
-
-    return top_ten_tickers, bottom_ten_tickers
-
-def merge_with_sp500_data(tickers, sp500_data):
-    # Merge tickers with the sp500_data to get company details
-    merged_data = pd.merge(
-        tickers.reset_index(),
+    top_ten_details = pd.merge(
+        top_ten_tickers.reset_index(),
         sp500_data,
         left_on='index',
         right_on='Ticker Symbol'
     )
+    top_ten_details.drop(columns=['Ticker Symbol'], inplace=True)
+    top_ten_details.rename(columns={0: 'Price Return (%)', 'index': 'Ticker Symbol'}, inplace=True)
+    top_ten_details = top_ten_details[['Ticker Symbol', 'Company Name', 'Sector', 'Industry', 'Price Return (%)']]
+    return top_ten_details
 
-    # Drop the redundant 'Ticker Symbol' column
-    merged_data.drop(columns=['Ticker Symbol'], inplace=True)
-
-    # Rename columns for clarity
-    merged_data.rename(columns={0: 'Price Return (%)', 'index': 'Ticker Symbol'}, inplace=True)
-    merged_data = merged_data[['Ticker Symbol', 'Company Name', 'Sector', 'Industry', 'Price Return (%)']]
-
-    # Sort the details by price return for clarity
-    merged_data = merged_data.sort_values(by='Price Return (%)', ascending=False)
-
-    return merged_data
+# Function to calculate bottom ten price returns
+def bottom_ten(start_date, end_date):
+    filtered_data = all_data_df.loc[start_date:end_date]
+    if start_date not in filtered_data.index or end_date not in filtered_data.index:
+        raise ValueError("Data for the specified start or end date is not available in the filtered data.")
+    start_prices = filtered_data.loc[start_date]
+    end_prices = filtered_data.loc[end_date]
+    price_change = round(((end_prices - start_prices) / start_prices) * 100, 2)
+    bottom_ten_tickers = price_change.sort_values(ascending=True).head(10)
+    bottom_ten_details = pd.merge(
+        bottom_ten_tickers.reset_index(),
+        sp500_data,
+        left_on='index',
+        right_on='Ticker Symbol'
+    )
+    bottom_ten_details.drop(columns=['Ticker Symbol'], inplace=True)
+    bottom_ten_details.rename(columns={0: 'Price Return (%)', 'index': 'Ticker Symbol'}, inplace=True)
+    bottom_ten_details = bottom_ten_details[['Ticker Symbol', 'Company Name', 'Sector', 'Industry', 'Price Return (%)']]
+    return bottom_ten_details
 
 # Main function to run the Streamlit app
 def main():
@@ -97,14 +94,12 @@ def main():
         st.error("Error: End Date must fall after Start Date.")
     else:
         # Download data (consider caching this for performance)
-        all_data_df, sp500_data = download_adjusted_close_prices(start_date=str(start_date))
+        global all_data_df, sp500_data
+        all_data_df, sp500_data = download_adjusted_close_prices()
 
         # Calculate top ten and bottom ten
-        top_ten_tickers, bottom_ten_tickers = calculate_price_returns(all_data_df, sp500_data, str(start_date), str(end_date))
-
-        # Merge with sp500_data to get detailed information
-        top_ten_df = merge_with_sp500_data(top_ten_tickers, sp500_data)
-        bottom_ten_df = merge_with_sp500_data(bottom_ten_tickers, sp500_data)
+        top_ten_df = top_ten(str(start_date), str(end_date))
+        bottom_ten_df = bottom_ten(str(start_date), str(end_date))
 
         # Display results
         st.subheader(f"Top 10 Performers from {start_date} to {end_date}")
